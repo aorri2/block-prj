@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/app.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
+    <title>파일 확장자 차단</title>
+</head>
+<body>
+<div class="outer">
+    <div class="inner">
+        <table>
+            <tr>
+                <th>고정 확장자</th>
+                <td>
+                    <span th:each="fixExtension : ${fixExtensions}">
+                        <input type="checkbox"
+                               th:value="${fixExtension.name}"
+                               th:id="${fixExtension.id}"
+                               th:checked="${fixExtension.activation}"
+                               th:onclick="|checkFixExtension(${fixExtension.id})|" />
+                        <label th:for="${fixExtension.id}" th:text="${fixExtension.name}">fixExtension.name</label>
+                    </span>
+                </td>
+            </tr>
+            <tr>
+                <th>커스텀 확장자</th>
+                <td>
+                    <form action="/custom-extension/add" method="post" id="custom-extension-form">
+                        <input type="text" id="custom-extension" name="custom-extension" placeholder="확장자 입력" maxlength="20">
+                        <input type="hidden" id="countCustomExtensions" name="custom-extension-count" th:value="${countCustomExtensions}"/>
+                        <button>+추가</button>
+                    </form>
+                    <p>
+                        <span th:text="${countCustomExtensions}">countCustomExtensions</span><span>/200</span>
+                    </p>
+                    <span th:each="customExtension : ${customExtensions}">
+                        <form  class="custom-extension-button" th:action ="@{/custom-extension/delete/} + ${customExtension.id}" method="post">
+                            <span th:text="${customExtension.name}">customExtension.name
+                            </span><img src="/images/delete.png" onclick="submit();"/>
+                        </form>
+                    </span>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+</body>
+<script>
+    $.validator.setDefaults({
+        onkeyup: false,
+        onclick: false,
+        onfocusout: false,
+        showErrors: function(errorMap,errorList){
+            if(this.numberOfInvalids()) {
+                alert(errorList[0].message);
+            }
+        }
+    });
+
+    $("#custom-extension-form").validate({
+        rules: {
+            "custom-extension": {
+                required: true,
+                rangelength: [1, 20],
+                remote: {
+                    url: "/custom-extension/isDuplicated",
+                    type: "POST",
+                    data: {
+                        name: function () {
+                            return $("#custom-extension").val();
+                        }
+                    }
+                }
+            },
+            "custom-extension-count": {
+                rangelength: [0, 200]
+            }
+        },
+        messages: {
+            "custom-extension": {
+                required: "확장자 값을 입력해주세요.",
+                rangelength: "확장자는 {0}에서 {1}자까지 가능합니다.",
+                remote: "이미 저장된 값이에요."
+            },
+            "custom-extension-count": {
+                rangelength: "확장자는 {1}개가 최대입니다."
+            }
+        }
+    });
+
+    function checkFixExtension(id) {
+        $.ajax({
+            type: "POST",
+            url: "/fix-extension/update",
+            data: {
+                id: id
+            },
+            success: function (data) {
+            },
+            complete: function (data) {
+            },
+            error: function (xhr, status, error) {
+                alert("문제가 있나봐요. 이따 하시겠어요?");
+            }
+        })};
+</script>
+</html>
